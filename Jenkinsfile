@@ -28,6 +28,8 @@ pipeline {
 
         stage('SCA - npm audit') {
             steps {
+                // Ensure we have a lockfile for the audit
+                sh 'npm install --package-lock-only || true'
                 sh 'npm audit --audit-level=high || true'
             }
         }
@@ -58,12 +60,10 @@ pipeline {
 
         stage('Kubernetes Deployment') {
             steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh "kubectl apply -f secret.yaml"
-                    sh "kubectl apply -f deployment.yaml"
-                    // Update image to the specific build
-                    sh "kubectl set image deployment/healthcare-app healthcare=${DOCKER_IMAGE}:${BUILD_NUMBER}"
-                }
+                sh "kubectl apply -f secret.yaml"
+                sh "kubectl apply -f deployment.yaml"
+                // Update image to the specific build
+                sh "kubectl set image deployment/healthcare-app healthcare=${DOCKER_IMAGE}:${BUILD_NUMBER}"
             }
         }
     }
